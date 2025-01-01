@@ -8,16 +8,23 @@ import streamlit as st
 from dotenv import load_dotenv
 from firebase_admin import credentials, firestore
 
-load_dotenv()  
+# -----------------------------
+# 🔑 Environment Setup
+# -----------------------------
+load_dotenv()
 
+
+# -----------------------------
+# 🚀 Firebase Initialization
+# -----------------------------
 def initialize_firebase():
     """Initializes Firebase connection."""
     firebase_credentials = os.getenv('FIREBASE_CREDENTIALS')
-    
+
     if not firebase_credentials:
         st.error("⚠️ Firebase credentials not found in environment variables. Please set 'FIREBASE_CREDENTIALS'.")
         st.stop()
-    
+
     try:
         cred = credentials.Certificate(json.loads(firebase_credentials))
         if not firebase_admin._apps:
@@ -27,10 +34,15 @@ def initialize_firebase():
         st.error(f"❌ Firebase initialization failed: {e}")
         st.stop()
 
+
+# Initialize Firestore Database
 db = initialize_firebase()
 st.success("✅ Firebase initialized successfully!")
 
 
+# -----------------------------
+# 📊 Fetch User Data
+# -----------------------------
 @st.cache_data(ttl=60)
 def fetch_user_data():
     """Fetch user data from Firestore and return a DataFrame."""
@@ -47,7 +59,8 @@ def fetch_user_data():
                 "Height": data.get("height"),
                 "Weight": data.get("weight"),
                 "Payment Status": data.get("gutTestPaymentStatus"),
-                "Timestamp": data.get("timestamp")
+                "Timestamp": pd.to_datetime(data.get("createdAt"), errors='coerce').strftime('%d-%m-%Y %H:%M:%S')
+                if data.get("createdAt") else "N/A"
             }
             for doc in docs if (data := doc.to_dict())
         ]
@@ -56,17 +69,16 @@ def fetch_user_data():
         st.error(f"❌ Failed to fetch user data: {e}")
         return pd.DataFrame()
 
+
 # -----------------------------
-# Streamlit UI Setup
+# 🎯 Streamlit UI
 # -----------------------------
 st.title("📊 Gibud User Dashboard")
 
 # ✅ Auto-Refresh Toggle
 auto_refresh = st.checkbox("🔄 Enable Auto-Refresh Every 10 Seconds", value=False)
 
-# -----------------------------
-# Display User Data
-# -----------------------------
+# ✅ Fetch and Display Data
 df = fetch_user_data()
 
 if df.empty:
@@ -75,10 +87,9 @@ else:
     st.write("### 📋 Complete User Data")
     st.dataframe(df)
 
-    # ✅ Sorting and Filtering Section
+    # 🛠️ Sort and Filter
     with st.expander("🔍 **Sort & Filter Data**"):
         sort_column = st.selectbox("📊 Select Column to Sort/Filter By", df.columns)
-
         if sort_column == "Payment Status":
             payment_filter = st.radio("🛡️ Filter by Payment Status", ["All", "True", "False"])
             if payment_filter == "True":
@@ -92,7 +103,7 @@ else:
         st.write("### ✅ Filtered/Sorted Data")
         st.dataframe(df)
 
-    # ✅ Filter by Timestamp
+    # 📅 Filter by Timestamp
     with st.expander("📆 **Filter by Timestamp**"):
         start_date = st.date_input("📅 Start Date")
         end_date = st.date_input("📅 End Date")
@@ -109,13 +120,11 @@ else:
             except Exception as e:
                 st.error(f"❌ Timestamp filtering error: {e}")
 
-    # ✅ Final Filtered Data Display
+    # 📊 Final Data Display
     st.write("### 📊 Final Filtered Data")
     st.dataframe(df)
 
-# -----------------------------
-# Auto-Refresh Logic
-# -----------------------------
+# 🔄 Auto-Refresh Logic
 if auto_refresh:
     with st.spinner("🔄 Refreshing data..."):
         time.sleep(10)
