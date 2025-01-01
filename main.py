@@ -6,24 +6,22 @@ import firebase_admin
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
-from firebase_admin import credentials, firestore, initialize_app
+from firebase_admin import credentials, firestore
 
 load_dotenv()  
 
 def initialize_firebase():
     """Initializes Firebase connection."""
-    firebase_credentials = st.secrets["FIREBASE_CREDENTIALS"]
+    firebase_credentials = os.getenv('FIREBASE_CREDENTIALS')
     
     if not firebase_credentials:
-        st.error("⚠ Firebase credentials not found in environment variables. Please set 'FIREBASE_CREDENTIALS'.")
+        st.error("⚠️ Firebase credentials not found in environment variables. Please set 'FIREBASE_CREDENTIALS'.")
         st.stop()
     
     try:
-        # Convert AttrDict to dict
-        firebase_credentials_dict = dict(firebase_credentials)
-        cred = credentials.Certificate(firebase_credentials_dict)
+        cred = credentials.Certificate(json.loads(firebase_credentials))
         if not firebase_admin._apps:
-            initialize_app(cred)
+            firebase_admin.initialize_app(cred)
         return firestore.client()
     except Exception as e:
         st.error(f"❌ Firebase initialization failed: {e}")
