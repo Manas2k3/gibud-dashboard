@@ -100,6 +100,8 @@ else:
             sort_order = st.radio("🔄 Sort Order", ["Ascending", "Descending"])
             df = df.sort_values(by=sort_column, ascending=(sort_order == "Ascending"))
 
+        df.reset_index(drop=True, inplace=True)
+
         st.write("### ✅ Filtered/Sorted Data")
         st.dataframe(df)
 
@@ -114,6 +116,7 @@ else:
                 df = df[
                     (df["Timestamp"] >= pd.to_datetime(start_date)) &
                     (df["Timestamp"] <= pd.to_datetime(end_date))
+                    
                 ]
                 st.write("### ✅ Filtered by Date Range")
                 st.dataframe(df)
