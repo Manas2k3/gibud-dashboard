@@ -105,28 +105,6 @@ else:
         st.write("### ✅ Filtered/Sorted Data")
         st.dataframe(df)
 
-    # 📅 Filter by Timestamp
-    with st.expander("📆 **Filter by Timestamp**"):
-        start_date = st.date_input("📅 Start Date")
-        end_date = st.date_input("📅 End Date")
-
-        if start_date and end_date:
-            try:
-                df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors='coerce')
-                df = df[
-                    (df["Timestamp"] >= pd.to_datetime(start_date)) &
-                    (df["Timestamp"] <= pd.to_datetime(end_date))
-                    
-                ]
-                st.write("### ✅ Filtered by Date Range")
-                st.dataframe(df)
-            except Exception as e:
-                st.error(f"❌ Timestamp filtering error: {e}")
-
-    # 📊 Final Data Display
-    st.write("### 📊 Final Filtered Data")
-    st.dataframe(df)
-
 # 🔄 Auto-Refresh Logic
 if auto_refresh:
     with st.spinner("🔄 Refreshing data..."):
