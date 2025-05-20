@@ -1,38 +1,40 @@
-import os
-import json
-import time
+import streamlit as st
+
+# ✅ Must be the FIRST Streamlit command
+st.set_page_config(page_title="📊 Gibud User Dashboard", layout="wide")
 
 import firebase_admin
-import pandas as pd
-import streamlit as st
-from dotenv import load_dotenv
 from firebase_admin import credentials, firestore
-
-# Load environment variables
-load_dotenv()
+import pandas as pd
+import time
 
 # -----------------------------
-# 🚀 Firebase Initialization
+# 🔐 Firebase Initialization
 # -----------------------------
 def initialize_firebase():
-    """Initializes Firebase connection using credentials from environment variables."""
-    firebase_credentials_json = os.getenv("FIREBASE_CREDENTIALS")
-
-    if not firebase_credentials_json:
-        st.error("⚠️ Firebase credentials not found. Please set the 'FIREBASE_CREDENTIALS' variable in your .env file.")
-        st.stop()
-
     try:
-        creds_dict = json.loads(firebase_credentials_json)
-        cred = credentials.Certificate(creds_dict)
+        cred = credentials.Certificate({
+            "type": st.secrets["type"],
+            "project_id": st.secrets["project_id"],
+            "private_key_id": st.secrets["private_key_id"],
+            "private_key": st.secrets["private_key"],
+            "client_email": st.secrets["client_email"],
+            "client_id": st.secrets["client_id"],
+            "auth_uri": st.secrets["auth_uri"],
+            "token_uri": st.secrets["token_uri"],
+            "auth_provider_x509_cert_url": st.secrets["auth_provider_x509_cert_url"],
+            "client_x509_cert_url": st.secrets["client_x509_cert_url"],
+            "universe_domain": st.secrets["universe_domain"]
+        })
+
         if not firebase_admin._apps:
             firebase_admin.initialize_app(cred)
         return firestore.client()
     except Exception as e:
-        st.error(f"❌ Failed to initialize Firebase: {e}")
+        st.error(f"❌ Firebase initialization failed: {e}")
         st.stop()
 
-# Initialize Firestore client
+# Initialize Firestore
 db = initialize_firebase()
 st.success("✅ Firebase initialized successfully!")
 
@@ -101,7 +103,6 @@ else:
             sort_order = st.radio("🔄 Sort Order", ["Ascending", "Descending"])
             ascending = (sort_order == "Ascending")
 
-            # Special case for Timestamp
             if sort_column == "Timestamp":
                 df = df.sort_values(by="Raw Timestamp", ascending=ascending)
             else:
