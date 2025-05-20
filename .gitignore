@@ -34,3 +34,5 @@ Thumbs.db
 # Ignore deployment-specific files
 *.tar.gz
 *.zip
+
+firebase_admin_key.json
