@@ -99,14 +99,24 @@ else:
                 df = df[df["Payment Status"] == True]
             elif payment_filter == "False":
                 df = df[df["Payment Status"] == False]
-        else:
+
+        elif sort_column == "Gender":
+            gender_filter = st.radio("🚻 Filter by Gender", ["All", "Male", "Female"])
+            if gender_filter != "All":
+                df = df[df["Gender"] == gender_filter]
+
+        elif sort_column in ["Age", "Height", "Weight", "Timestamp"]:
             sort_order = st.radio("🔄 Sort Order", ["Ascending", "Descending"])
             ascending = (sort_order == "Ascending")
-
             if sort_column == "Timestamp":
                 df = df.sort_values(by="Raw Timestamp", ascending=ascending)
             else:
                 df = df.sort_values(by=sort_column, ascending=ascending)
+
+        else:
+            sort_order = st.radio("🔄 Sort Order", ["Ascending", "Descending"])
+            ascending = (sort_order == "Ascending")
+            df = df.sort_values(by=sort_column, ascending=ascending)
 
         df.reset_index(drop=True, inplace=True)
         st.write("### ✅ Filtered/Sorted Data")
