@@ -39,6 +39,21 @@ db = initialize_firebase()
 st.success("✅ Firebase initialized successfully!")
 
 # -----------------------------
+# 🧠 Risk Interpretation Logic
+# -----------------------------
+def interpret_score(score):
+    if score is None:
+        return "Unknown"
+    if score <= 20:
+        return "Low Risk"
+    elif score <= 35:
+        return "Moderate Risk"
+    elif score <= 39:
+        return "High Risk"
+    else:
+        return "Very High Risk"
+
+# -----------------------------
 # 📊 Fetch User Data
 # -----------------------------
 @st.cache_data(ttl=60)
@@ -46,13 +61,26 @@ def fetch_user_data():
     """Fetch user data from Firestore and return a DataFrame."""
     try:
         users_ref = db.collection("Users")
+        survey_ref = db.collection("Surveys")
         docs = users_ref.stream()
         user_data = []
 
         for doc in docs:
             data = doc.to_dict()
             if data:
+                user_id = data.get("id")  # 👈 used to match with Surveys
                 raw_timestamp = pd.to_datetime(data.get("createdAt"), errors='coerce')
+
+                # Fetch related survey (assume most recent one)
+                survey_docs = survey_ref.where("id", "==", user_id).stream()
+                question_score = None
+                for survey in survey_docs:
+                    survey_data = survey.to_dict()
+                    question_score = survey_data.get("questionScore")
+                    break  # Only fetch the first one found
+
+                risk_level = interpret_score(question_score)
+
                 user_data.append({
                     "Name": data.get("name"),
                     "Email": data.get("email"),
@@ -62,7 +90,9 @@ def fetch_user_data():
                     "Height": data.get("height"),
                     "Weight": data.get("weight"),
                     "Payment Status": data.get("gutTestPaymentStatus"),
-                    "Raw Timestamp": raw_timestamp,  # Keep for sorting
+                    "Question Score": question_score,
+                    "Risk Level": risk_level,
+                    "Raw Timestamp": raw_timestamp,
                     "Timestamp": raw_timestamp.strftime('%d-%m-%Y %H:%M:%S') if pd.notnull(raw_timestamp) else "N/A"
                 })
 
@@ -105,7 +135,7 @@ else:
             if gender_filter != "All":
                 df = df[df["Gender"] == gender_filter]
 
-        elif sort_column in ["Age", "Height", "Weight", "Timestamp"]:
+        elif sort_column in ["Age", "Height", "Weight", "Timestamp", "Question Score"]:
             sort_order = st.radio("🔄 Sort Order", ["Ascending", "Descending"])
             ascending = (sort_order == "Ascending")
             if sort_column == "Timestamp":
