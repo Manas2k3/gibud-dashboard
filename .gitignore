@@ -36,3 +36,4 @@ Thumbs.db
 *.zip
 
 firebase_admin_key.json
+data.py

@@ -69,7 +69,16 @@ def fetch_user_data():
             data = doc.to_dict()
             if data:
                 user_id = data.get("id")  # 👈 used to match with Surveys
-                raw_timestamp = pd.to_datetime(data.get("createdAt"), errors='coerce')
+                raw_timestamp = data.get("createdAt")
+
+                # ✅ Normalize Firestore/CSV timestamps safely
+                if raw_timestamp:
+                    try:
+                        raw_timestamp = pd.to_datetime(raw_timestamp, errors="coerce")
+                    except Exception:
+                        raw_timestamp = pd.NaT
+                else:
+                    raw_timestamp = pd.NaT
 
                 # Fetch related survey (assume most recent one)
                 survey_docs = survey_ref.where("id", "==", user_id).stream()
@@ -139,7 +148,8 @@ else:
             sort_order = st.radio("🔄 Sort Order", ["Ascending", "Descending"])
             ascending = (sort_order == "Ascending")
             if sort_column == "Timestamp":
-                df = df.sort_values(by="Raw Timestamp", ascending=ascending)
+                # ✅ Safe sort with NaT values at the bottom
+                df = df.sort_values(by="Raw Timestamp", ascending=ascending, na_position="last")
             else:
                 df = df.sort_values(by=sort_column, ascending=ascending)
 
