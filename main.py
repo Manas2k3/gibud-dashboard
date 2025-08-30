@@ -75,6 +75,13 @@ def fetch_user_data():
                 if raw_timestamp:
                     try:
                         raw_timestamp = pd.to_datetime(raw_timestamp, errors="coerce")
+
+                        # 🔧 Make all timestamps tz-naive UTC for consistency
+                        if pd.notnull(raw_timestamp):
+                            if raw_timestamp.tzinfo is not None:  # Firestore returns tz-aware
+                                raw_timestamp = raw_timestamp.tz_convert("UTC").tz_localize(None)
+                            else:
+                                raw_timestamp = raw_timestamp.tz_localize(None)
                     except Exception:
                         raw_timestamp = pd.NaT
                 else:
